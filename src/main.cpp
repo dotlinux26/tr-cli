@@ -84,9 +84,9 @@ int main(int argc, char* argv[]) {
         std::cout << "  \033[1;33mDanh sách thùng rác (Trash list):\033[0m\n";
 
         // Column widths: ID=26, Date=22, Path=30, Type=14, Size=18
-        // Headers shortened to fit within column widths
+        // English headers only, left-aligned with %-
         printf("  \033[1;36m%-26s %-22s %-30s %-14s %18s\033[0m\n",
-            "ID (M\u00e3)", "Ng\u00e0y x\u00f3a (Date)", "\u0110\u01b0\u1eddng d\u1ea5n g\u1ed1c", "Lo\u1ea1i (Type)", "K\u00edch th\u01b0\u1edbc");
+            "ID", "Deleted Date", "Original Path", "Type", "Size");
 
         for (const auto& e : entries) {
             std::string id = e.trash_path;
@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
                 path_display = "..." + path_display.substr(path_display.length() - 27);
             }
 
-            // Same format as header: same widths, same "  " leading indentation
+            // Same format as header: same widths, same "  " leading indentation, all left-aligned
             printf("  %-26s %-22s %-30s %-14s %18s\n",
                 id.c_str(), e.deleted_at.c_str(), path_display.c_str(), e.type.c_str(), size_str.c_str());
         }
