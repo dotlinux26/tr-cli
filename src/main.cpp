@@ -1,44 +1,48 @@
 #include "trashcli.h"
 #include <iostream>
 #include <string>
+#include <iomanip>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 void print_banner() {
     std::cout << "\n";
-    std::cout << "  \033[1;32m";
+    std::cout << "\033[1;32m";
     std::cout << "  ████████╗███████╗██████╗ ███╗   ███╗\n";
     std::cout << "  ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║\n";
     std::cout << "     ██║   █████╗  ██████╔╝██╔████╔██║\n";
     std::cout << "     ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║\n";
     std::cout << "     ██║   ███████╗██║  ██║██║ ╚═╝ ██║\n";
     std::cout << "     ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝\n";
-    std::cout << "  \033[0m";
+    std::cout << "\033[0m";
     std::cout << "\n";
-    std::cout << "  \033[1;36mTrash CLI\033[0m - Cong cu quan ly thung rac cho Linux\n";
-    std::cout << "  \033[90mPhien ban 1.0.0 | (c) 2026 Nguyễn Đức Cảnh\033[0m\n";
+    std::cout << "  \033[1;36mTrash CLI\033[0m - Công cụ quản lý thùng rác cho Linux (Trash management tool for Linux)\n";
+    std::cout << "  \033[90mPhiên bản 1.0.0 (Version) | (c) 2026 Nguyễn Đức Cảnh\033[0m\n";
     std::cout << "\n";
 }
 
 void print_usage() {
     print_banner();
-    std::cout << "  \033[1;33mSu dung:\033[0m\n";
-    std::cout << "    tr <file>             Xoa file vao thung rac\n";
-    std::cout << "    tr -r <thu muc>       Xoa de quy thu muc\n";
-    std::cout << "    tr -rf <file>         Xoa vinh vien file\n";
-    std::cout << "    tr -rf *              Xoa noi dung, giu thu muc\n";
-    std::cout << "    tr -re <duong dan>    Khoi phuc file\n";
-    std::cout << "    tr -ref <duong dan>   Khoi phuc ghi de\n";
-    std::cout << "    tr -l                 Liet ke file trong trash\n";
-    std::cout << "    tr -i <file>          Xem thong tin file\n";
-    std::cout << "    tr -info <file>       Xem thong tin chi tiet\n";
-    std::cout << "    tr -e                 Xoa toan bo trash\n";
-    std::cout << "    tr -h, --help         Hien thi huong dan\n";
-    std::cout << "    tr -v, --version      Hien thi phien ban\n";
+    std::cout << "  \033[1;33mSử dụng (Usage):\033[0m\n";
+    std::cout << "    tr <file>             Xóa file vào thùng rác (Delete file to trash)\n";
+    std::cout << "    tr -r <thu muc>       Xóa đệ quy thư mục (Delete directory recursively)\n";
+    std::cout << "    tr -rf <file>         Xóa vĩnh viễn file (Delete file permanently)\n";
+    std::cout << "    tr -rf *              Xóa nội dung, giữ thư mục (Delete contents, keep directory)\n";
+    std::cout << "    tr -re <ID>           Khôi phục theo ID (Restore by ID)\n";
+    std::cout << "    tr -ref <ID>          Khôi phục ghi đè theo ID (Restore and overwrite by ID)\n";
+    std::cout << "    tr -l                 Liệt kê file trong trash (List files in trash)\n";
+    std::cout << "    tr -i <ID>            Xem thông tin theo ID (View info by ID)\n";
+    std::cout << "    tr -info <ID>         Xem thông tin chi tiết theo ID (View detailed info by ID)\n";
+    std::cout << "    tr -e                 Xóa toàn bộ trash (Empty trash)\n";
+    std::cout << "    tr -h, --help         Hiển thị hướng dẫn (Show help)\n";
+    std::cout << "    tr -v, --version      Hiển thị phiên bản (Show version)\n";
     std::cout << "\n";
-    std::cout << "  \033[1;33mVi du:\033[0m\n";
-    std::cout << "    tr test.txt           Xoa file test.txt vao trash\n";
-    std::cout << "    tr -r mydir           Xoa thu muc mydir de quy\n";
-    std::cout << "    tr -l                 Xem danh sach trash\n";
-    std::cout << "    tr -re /tmp/trash/... Khoi phuc file\n";
+    std::cout << "  \033[1;33mVí dụ (Example):\033[0m\n";
+    std::cout << "    tr test.txt           Xóa file test.txt vào trash (Delete test.txt to trash)\n";
+    std::cout << "    tr -r mydir           Xóa thư mục mydir đệ quy (Delete mydir recursively)\n";
+    std::cout << "    tr -l                 Xem danh sách trash (View trash list)\n";
+    std::cout << "    tr -re 20260910-abc   Khôi phục file (Restore file)\n";
     std::cout << "\n";
     std::cout << "  \033[90mhttps://github.com/dotlinux26/tr-cli\033[0m\n";
     std::cout << "\n";
@@ -46,10 +50,10 @@ void print_usage() {
 
 void print_version() {
     print_banner();
-    std::cout << "  \033[1;36mtr-cli\033[0m phien ban \033[1;32m1.0.0\033[0m\n";
-    std::cout << "  Ngon ngu: C++17\n";
-    std::cout << "  Nen tang: Linux (POSIX)\n";
-    std::cout << "  Giay phep: MIT\n";
+    std::cout << "  \033[1;36mtr-cli\033[0m phiên bản (version) \033[1;32m1.0.0\033[0m\n";
+    std::cout << "  Ngôn ngữ (Language): C++17\n";
+    std::cout << "  Nền tảng (Platform): Linux (POSIX)\n";
+    std::cout << "  Giấy phép (License): MIT\n";
     std::cout << "\n";
 }
 
@@ -72,71 +76,111 @@ int main(int argc, char* argv[]) {
     }
 
     if (cmd == "-l") {
-        print_banner();
         auto entries = trashcli::list_trash();
         if (entries.empty()) {
-            std::cout << "  \033[33mThung rac trong.\033[0m\n\n";
+            std::cout << "  \033[33mThùng rác trống (Trash is empty).\033[0m\n\n";
             return 0;
         }
-        std::cout << "  \033[1;33mDanh sach thung rac:\033[0m\n";
-        std::cout << "  \033[90m─────────────────────────────────────────────────────\033[0m\n";
+        std::cout << "  \033[1;33mDanh sách thùng rác (Trash list):\033[0m\n";
+        std::cout << "  \033[90m────────────────────────────────────────────────────────────────────────────────────────────────────\033[0m\n";
+        std::cout << "  \033[1;36m"
+                  << std::left << std::setw(26) << "ID (Mã)"
+                  << std::left << std::setw(22) << "Ngày xóa (Date)"
+                  << std::left << std::setw(40) << "Đường dẫn gốc (Original Path)"
+                  << std::left << std::setw(14) << "Loại (Type)"
+                  << std::right << std::setw(12) << "Kích thước (Size)"
+                  << "\033[0m\n";
+        std::cout << "  \033[90m────────────────────────────────────────────────────────────────────────────────────────────────────\033[0m\n";
         for (const auto& e : entries) {
-            std::cout << "  \033[1;32m" << e.name << "\033[0m\n";
-            std::cout << "    Goc:    " << e.original_path << "\n";
-            std::cout << "    Xoa:    " << e.deleted_at << "\n\n";
+            std::string id = e.trash_path;
+            size_t pos = id.rfind("/data");
+            if (pos != std::string::npos) id = id.substr(0, pos);
+            pos = id.rfind('/');
+            if (pos != std::string::npos) id = id.substr(pos + 1);
+            
+            std::string size_str;
+            if (e.size >= 1024 * 1024) size_str = std::to_string(e.size / 1024 / 1024) + " MB";
+            else if (e.size >= 1024) size_str = std::to_string(e.size / 1024) + " KB";
+            else size_str = std::to_string(e.size) + " B";
+
+            std::cout << "  "
+                      << std::left << std::setw(26) << id
+                      << std::left << std::setw(22) << e.deleted_at
+                      << std::left << std::setw(40) << e.original_path
+                      << std::left << std::setw(14) << e.type
+                      << std::right << std::setw(12) << size_str
+                      << "\n";
         }
+        std::cout << "\n";
         return 0;
     }
 
     if (cmd == "-e") {
-        print_banner();
-        std::cout << "  \033[33mBan co chac chan muon xoa toan bo thung rac? [y/N] \033[0m";
+        std::cout << "  \033[33mBạn có chắc chắn muốn xóa toàn bộ thùng rác? (Are you sure you want to empty trash?) [y/N] \033[0m";
         char c;
         std::cin >> c;
         if (c == 'y' || c == 'Y') {
             trashcli::empty_trash();
-            std::cout << "  \033[32mDa xoa toan bo thung rac.\033[0m\n\n";
+            std::cout << "  \033[32mĐã xóa toàn bộ thùng rác (Trash emptied).\033[0m\n\n";
         } else {
-            std::cout << "  \033[33mDa huy.\033[0m\n\n";
+            std::cout << "  \033[33mĐã hủy (Cancelled).\033[0m\n\n";
         }
         return 0;
     }
 
     if (cmd == "-r" && argc >= 3) {
-        print_banner();
         return trashcli::trash_recursive(argv[2]) ? 0 : 1;
     }
 
     if (cmd == "-rf" && argc >= 3) {
-        print_banner();
-        if (std::string(argv[2]) == "*") {
-            return trashcli::empty_trash(false) ? 0 : 1;
+        std::string arg = argv[2];
+        if (arg == "*") {
+            // Delete all contents of current directory but keep the directory
+            fs::path cwd = fs::current_path();
+            for (auto& entry : fs::directory_iterator(cwd)) {
+                std::string path = entry.path().string();
+                if (!trashcli::permanent_delete(path)) {
+                    return 1;
+                }
+            }
+            return 0;
+        }
+        // Handle folder/* pattern - delete contents but keep folder
+        if (arg.size() >= 2 && arg.substr(arg.size() - 2) == "/*") {
+            std::string folder = arg.substr(0, arg.size() - 1); // remove *
+            fs::path fp(folder);
+            if (!fs::exists(fp) || !fs::is_directory(fp)) {
+                std::cerr << "Error: Directory not found: " << folder << "\n";
+                return 1;
+            }
+            for (auto& entry : fs::directory_iterator(fp)) {
+                std::string path = entry.path().string();
+                if (!trashcli::permanent_delete(path)) {
+                    return 1;
+                }
+            }
+            return 0;
         }
         return trashcli::permanent_delete(argv[2]) ? 0 : 1;
     }
 
     if (cmd == "-re" && argc >= 3) {
-        print_banner();
         return trashcli::restore_file(argv[2], false) ? 0 : 1;
     }
 
     if (cmd == "-ref" && argc >= 3) {
-        print_banner();
         return trashcli::restore_file(argv[2], true) ? 0 : 1;
     }
 
     if (cmd == "-i" && argc >= 3) {
-        print_banner();
         return trashcli::show_info(argv[2], false) ? 0 : 1;
     }
 
     if (cmd == "-info" && argc >= 3) {
-        print_banner();
         return trashcli::show_info(argv[2], true) ? 0 : 1;
     }
 
     if (cmd[0] != '-') {
-        print_banner();
         return trashcli::trash_file(cmd) ? 0 : 1;
     }
 

@@ -11,6 +11,7 @@ struct TrashEntry {
     std::string original_path;
     std::string trash_path;
     std::string deleted_at;
+    std::string type;  // "file" hoặc "directory"
     std::size_t size;
 };
 

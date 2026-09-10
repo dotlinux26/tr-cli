@@ -24,7 +24,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     )
 endif()
 
-target_link_libraries(tr stdc++fs)
+target_link_libraries(tr stdc++fs sqlite3)
 
 # ==================================================
 # Cau hinh cai dat (install)
@@ -44,5 +44,5 @@ install(DIRECTORY docs/
 # ==================================================
 enable_testing()
 add_executable(test_trash test/test_trash.cpp src/trash.cpp)
-target_link_libraries(test_trash stdc++fs)
+target_link_libraries(test_trash stdc++fs sqlite3)
 add_test(NAME test_trash COMMAND test_trash)

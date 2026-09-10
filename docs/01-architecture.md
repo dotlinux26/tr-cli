@@ -8,15 +8,15 @@ tr-cli là công cụ dòng lệnh cho phép người dùng xóa, khôi phục v
 
 ```
 tr-cli/
-├── CMakeLists.txt          # Hệ thống build
+├── CMakeLists.txt          # Hệ thống build + cài đặt
 ├── README.md               # Hướng dẫn sử dụng
 ├── SPEC.MD                 # Giải thích chức năng
 ├── LICENSE                 # Giấy phép MIT
 ├── include/
 │   └── trashcli.h          # Header chính
 ├── src/
-│   ├── main.cpp            # Điểm vào chương trình
-│   └── trash.cpp           # Hiện thị chức năng
+│   ├── main.cpp            # Điểm vào chương trình + CLI parser
+│   └── trash.cpp           # Xử lý nghiệp vụ + SQLite3
 ├── test/
 │   └── test_trash.cpp      # Đơn vị kiểm thử
 ├── docs/
@@ -28,11 +28,11 @@ tr-cli/
 │   ├── sprint-log.md       # Nhật ký sprint
 │   └── process.md          # Quy trình phát triển
 ├── thirdparty/
-│   ├── json/
-│   │   └── json.hpp        # Thư viện nlohmann/json
 │   └── sqlite/
 │       ├── sqlite3.h       # Header SQLite3
-│       └── sqlite3ext.h    # Header SQLite3 extension
+│       ├── sqlite3ext.h    # Header SQLite3 extension
+│       ├── sqlite3.c       # Amalgamation source
+│       └── sqlite.zip      # Nén SQLite3
 ├── scripts/
 │   └── bugs/               # Script mô phỏng lỗi
 │       ├── B01_metadata.sh
@@ -40,7 +40,7 @@ tr-cli/
 │       ├── B03_permission.sh
 │       ├── B04_duplicate.sh
 │       └── B05_relative_path.sh
-└── build/                  # Thư mục build
+└── build/                  # Thư mục build (bỏ qua git)
 ```
 
 ## 1.3. Luồng xử lý
@@ -71,6 +71,13 @@ Người dùng
    │     │     │     │      │
    ▼     ▼     ▼     ▼      ▼
 ┌─────────────────────────────────────────┐
+│           Data Access Layer             │
+│     SQLite3 (embedded database)         │
+│     trash_entries, trash_sessions       │
+└─────────────────────────────────────────┘
+   │
+   ▼
+┌─────────────────────────────────────────┐
 │           File System Layer             │
 │     std::filesystem (POSIX API)         │
 └─────────────────────────────────────────┘
@@ -80,29 +87,22 @@ Người dùng
 
 ```
 ~/.local/share/trash/
+├── trash.db                 # SQLite3 database
 ├── 20260910-205150-2b42b/
-│   ├── metadata.json       # Thông tin file gốc
 │   └── data/
 │       └── testfile.txt    # File đã xóa
 ├── 20260910-205230-abc12/
-│   ├── metadata.json
 │   └── data/
 │       └── mydir/          # Thư mục đã xóa
 │           ├── a.txt
 │           └── b.txt
 ```
 
-Định dạng tên thư mục: `YYYYMMDD-HHmmss-5hex`
+Định dạng tên thư mục session: `YYYYMMDD-HHmmss-5hex`
 
-Nội dung metadata.json:
-```json
-{
-  "name": "testfile.txt",
-  "original_path": "/home/user/testfile.txt",
-  "deleted_at": "2026-09-10 20:51:50",
-  "size": 1024
-}
-```
+Cơ sở dữ liệu `trash.db` chứa 2 bảng:
+- `trash_entries`: Metadata từng file/thư mục
+- `trash_sessions`: Thông tin phiên xóa
 
 ## 1.5. Công nghệ sử dụng
 
@@ -111,6 +111,27 @@ Nội dung metadata.json:
 | C++ | 17 | Ngôn ngữ lập trình |
 | CMake | 3.14+ | Hệ thống build |
 | POSIX API | - | Thao tác file |
-| SQLite3 | 3.45+ | Lưu trữ metadata (kế hoạch) |
-| nlohmann/json | 3.11+ | Xử lý JSON |
-| Google Test | 1.14+ | Kiểm thử đơn vị |
+| SQLite3 | 3.45+ | Lưu trữ metadata (embedded) |
+| std::filesystem | C++17 | Thao tác thư mục/file |
+
+## 1.6. Thiết kế dữ liệu
+
+### Bảng trash_entries
+| Cột | Kiểu | Mô tả |
+|-----|------|-------|
+| id | INTEGER | Khóa chính, tự tăng |
+| name | TEXT | Tên file/thư mục |
+| original_path | TEXT | Đường dẫn gốc |
+| trash_path | TEXT | Đường dẫn session |
+| deleted_at | TIMESTAMP | Thời điểm xóa |
+| size | INTEGER | Kích thước (bytes) |
+| file_type | TEXT | 'file' hoặc 'directory' |
+
+### Bảng trash_sessions
+| Cột | Kiểu | Mô tả |
+|-----|------|-------|
+| id | INTEGER | Khóa chính, tự tăng |
+| session_dir | TEXT | Tên thư mục session |
+| created_at | TIMESTAMP | Thời điểm tạo |
+
+Indexes: `idx_original_path`, `idx_deleted_at`, `idx_session_dir`

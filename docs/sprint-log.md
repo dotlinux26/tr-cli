@@ -152,8 +152,9 @@ Bảng 7.5. Sprint Backlog Sprint 4
 - Lệnh `tr -info <file>`: Hiển thị thông tin chi tiết
 - Kiểm thử tích hợp toàn bộ
 - Tài liệu sử dụng hoàn chỉnh
+- **Chuyển đổi metadata từ JSON sang SQLite3** (Issue #6): Thay thế parse JSON thủ công bằng SQLite3 embedded database, khắc phục bug parse offset, tăng hiệu năng truy vấn
 
-**Đánh giá:** Dự án hoàn thành đúng hạn. Tất cả 10 User Story đã hoàn thành. Tổng story point: 30.
+**Đánh giá:** Dự án hoàn thành đúng hạn. Tất cả 10 User Story đã hoàn thành. Tổng story point: 30. Bug #6 (original_path parse error) đã được khắc phục bằng cách chuyển sang SQLite3.
 
 ---
 
