@@ -82,39 +82,37 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         std::cout << "  \033[1;33mDanh sách thùng rác (Trash list):\033[0m\n";
-        std::cout << "  \033[90m────────────────────────────────────────────────────────────────────────────────────────────────────\033[0m\n";
-        
-        // Header dùng printf để căn chỉnh chính xác với data
-        std::cout << "  \033[1;36m";
-        printf("%-26s %-22s %-55s %-14s %14s\n", 
-            "ID (Mã)", "Ngày xóa (Date)", "Đường dẫn gốc (Original Path)", "Loại (Type)", "Kích thước (Size)");
-        std::cout << "\033[0m";
-        
-        std::cout << "  \033[90m────────────────────────────────────────────────────────────────────────────────────────────────────\033[0m\n";
+
+        // Column widths: ID=26, Date=22, Path=30, Type=14, Size=18
+        // Headers shortened to fit within column widths
+        printf("  \033[1;36m%-26s %-22s %-30s %-14s %18s\033[0m\n",
+            "ID (M\u00e3)", "Ng\u00e0y x\u00f3a (Date)", "\u0110\u01b0\u1eddng d\u1ea5n g\u1ed1c", "Lo\u1ea1i (Type)", "K\u00edch th\u01b0\u1edbc");
+
         for (const auto& e : entries) {
             std::string id = e.trash_path;
             size_t pos = id.rfind("/data");
             if (pos != std::string::npos) id = id.substr(0, pos);
             pos = id.rfind('/');
             if (pos != std::string::npos) id = id.substr(pos + 1);
-            
+
             std::string size_str;
             if (e.size >= 1024 * 1024) size_str = std::to_string(e.size / 1024 / 1024) + " MB";
             else if (e.size >= 1024) size_str = std::to_string(e.size / 1024) + " KB";
             else size_str = std::to_string(e.size) + " B";
 
+            // Path truncation: from LEFT, keep rightmost 27 chars + "..." (total 30)
             std::string path_display = e.original_path;
-            if (path_display.length() > 53) {
-                path_display = "..." + path_display.substr(path_display.length() - 50);
+            if (path_display.length() > 30) {
+                path_display = "..." + path_display.substr(path_display.length() - 27);
             }
 
-            printf("  %-26s %-22s %-55s %-14s %14s\n",
+            // Same format as header: same widths, same "  " leading indentation
+            printf("  %-26s %-22s %-30s %-14s %18s\n",
                 id.c_str(), e.deleted_at.c_str(), path_display.c_str(), e.type.c_str(), size_str.c_str());
         }
         std::cout << "\n";
         return 0;
     }
-
     if (cmd == "-e") {
         std::cout << "  \033[33mBạn có chắc chắn muốn xóa toàn bộ thùng rác? (Are you sure you want to empty trash?) [y/N] \033[0m";
         char c;
