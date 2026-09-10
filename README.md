@@ -325,4 +325,4 @@ tr empty <<< "y"
 
 ## License
 
-[MIT](LICENSE) — Copyright (c) 2026 Nguyen Duc Canh
+[MIT](LICENSE) — Copyright (c) 2026 Nguyễn Đức Cảnh
