@@ -83,13 +83,13 @@ int main(int argc, char* argv[]) {
         }
         std::cout << "  \033[1;33mDanh sách thùng rác (Trash list):\033[0m\n";
         std::cout << "  \033[90m────────────────────────────────────────────────────────────────────────────────────────────────────\033[0m\n";
-        std::cout << "  \033[1;36m"
-                  << std::left << std::setw(26) << "ID (Mã)"
-                  << std::left << std::setw(22) << "Ngày xóa (Date)"
-                  << std::left << std::setw(55) << "Đường dẫn gốc (Original Path)"
-                  << std::left << std::setw(14) << "Loại (Type)"
-                  << std::right << std::setw(14) << "Kích thước (Size)"
-                  << "\033[0m\n";
+        
+        // Header dùng printf để căn chỉnh chính xác với data
+        std::cout << "  \033[1;36m";
+        printf("%-26s %-22s %-55s %-14s %14s\n", 
+            "ID (Mã)", "Ngày xóa (Date)", "Đường dẫn gốc (Original Path)", "Loại (Type)", "Kích thước (Size)");
+        std::cout << "\033[0m";
+        
         std::cout << "  \033[90m────────────────────────────────────────────────────────────────────────────────────────────────────\033[0m\n";
         for (const auto& e : entries) {
             std::string id = e.trash_path;
@@ -103,19 +103,13 @@ int main(int argc, char* argv[]) {
             else if (e.size >= 1024) size_str = std::to_string(e.size / 1024) + " KB";
             else size_str = std::to_string(e.size) + " B";
 
-            // Cắt bớt đường dẫn nếu quá dài để không bị tràn cột
             std::string path_display = e.original_path;
             if (path_display.length() > 53) {
                 path_display = "..." + path_display.substr(path_display.length() - 50);
             }
 
-            std::cout << "  "
-                      << std::left << std::setw(26) << id
-                      << std::left << std::setw(22) << e.deleted_at
-                      << std::left << std::setw(55) << path_display
-                      << std::left << std::setw(14) << e.type
-                      << std::right << std::setw(14) << size_str
-                      << "\n";
+            printf("  %-26s %-22s %-55s %-14s %14s\n",
+                id.c_str(), e.deleted_at.c_str(), path_display.c_str(), e.type.c_str(), size_str.c_str());
         }
         std::cout << "\n";
         return 0;
