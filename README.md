@@ -142,8 +142,8 @@ tr --help
 
 ```bash
 tr file.txt                    # chuyển file vào trash
-tr folder/                     # chuyển folder vào trash
-tr -r folder/                  # chuyển folder đệ quy vào trash
+tr folder/                     # chuyển folder vào trash (hỗ trợ cả folder và folder/)
+tr -r folder/                  # chuyển folder đệ quy vào trash (alias của tr folder)
 ```
 
 ### Xóa vĩnh viễn (tương đương rm -rf)
@@ -181,13 +181,14 @@ Output:
 ### Khôi phục
 
 ```bash
-tr -re ~/.local/share/trash/20260910-205150-2b42b/data/testfile.txt
+# Lấy ID từ tr -l
+tr -re 20260911-011513-aa1d62df3fff
 ```
 
 Hoặc khôi phục và ghi đè nếu file đã tồn tại:
 
 ```bash
-tr -ref ~/.local/share/trash/20260910-205150-2b42b/data/testfile.txt
+tr -ref 20260911-011513-aa1d62df3fff
 ```
 
 ### Xóa vĩnh viễn toàn bộ trash
