@@ -279,3 +279,4 @@ bool show_info(const std::string& filepath, bool detailed) {
 }
 
 }
+// Issue #1: Bo sung ham tao metadata.json
