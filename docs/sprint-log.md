@@ -74,6 +74,8 @@ Bảng 7.5. Sprint Backlog Sprint 4
 | US-010 | Hiển thị thông tin chi tiết (`-info`) | 3 | 4 giờ | Done | Hiển thị tên, kích thước (byte/KB/MB), đường dẫn gốc, ngày xóa, loại file, quyền truy cập; Hỗ trợ thư mục | `tr -info <file>` -> kiểm tra đầy đủ thông tin | Nguyễn Đức Cảnh | Triển khai hàm info_detail() | Đọc metadata.json; Lấy thông tin stat(); Format kích thước; Hiển thị quyền truy cập |
 | - | Kiểm thử tích hợp | - | 4 giờ | Done | Tất cả chức năng hoạt động đồng bộ | Chạy toàn bộ test case | Nguyễn Đức Cảnh | Kiểm thử tích hợp | Chạy unit test; Kiểm thử thủ công; Sửa lỗi |
 | - | Hoàn thiện tài liệu | - | 4 giờ | Done | README.md, SPEC.MD, docs/ đầy đủ | Kiểm tra tài liệu | Lò Thanh Tùng, Nguyễn Khắc Nam Khánh | Viết tài liệu | Cập nhật README.md; Hoàn thiện báo cáo; Tổng hợp tài liệu |
+| Bug #7 | Sửa bảng -l cột căn chỉnh | - | 2 giờ | Done | Header và data căn chỉnh đúng, đường dẫn quá dài được cắt gọn | Chạy `tr -l` kiểm tra bảng đẹp | Nguyễn Đức Cảnh | Sửa setw() trong list_trash() | Tăng độ rộng cột; Thêm padding; Cắt đường dẫn dài |
+| Bug #8 | Sửa restore thư mục crash | - | 3 giờ | Done | Khôi phục thư mục không crash, file/thư mục về đúng vị trí | `tr -re <ID>` thư mục -> kiểm tra restore | Nguyễn Đức Cảnh | Sửa restore_file() query file_type | Thêm file_type vào SELECT; Xử lý directory vs file khác nhau |
 
 ---
 
@@ -153,8 +155,10 @@ Bảng 7.5. Sprint Backlog Sprint 4
 - Kiểm thử tích hợp toàn bộ
 - Tài liệu sử dụng hoàn chỉnh
 - **Chuyển đổi metadata từ JSON sang SQLite3** (Issue #6): Thay thế parse JSON thủ công bằng SQLite3 embedded database, khắc phục bug parse offset, tăng hiệu năng truy vấn
+- **Sửa Bug #7**: Bảng `tr -l` cột căn chỉnh đúng, header và data tách biệt rõ ràng, đường dẫn quá dài tự cắt gọn
+- **Sửa Bug #8**: Khôi phục thư mục không còn crash, hỗ trợ restore đúng file_type (file/directory)
 
-**Đánh giá:** Dự án hoàn thành đúng hạn. Tất cả 10 User Story đã hoàn thành. Tổng story point: 30. Bug #6 (original_path parse error) đã được khắc phục bằng cách chuyển sang SQLite3.
+**Đánh giá:** Dự án hoàn thành đúng hạn. Tất cả 10 User Story đã hoàn thành. Tổng story point: 30. Bug #6 (original_path parse error) đã được khắc phục bằng cách chuyển sang SQLite3. Bug #7, #8 được phát hiện và sửa trong giai đoạn kiểm thử cuối.
 
 ---
 

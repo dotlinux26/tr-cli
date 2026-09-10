@@ -86,9 +86,9 @@ int main(int argc, char* argv[]) {
         std::cout << "  \033[1;36m"
                   << std::left << std::setw(26) << "ID (Mã)"
                   << std::left << std::setw(22) << "Ngày xóa (Date)"
-                  << std::left << std::setw(40) << "Đường dẫn gốc (Original Path)"
+                  << std::left << std::setw(55) << "Đường dẫn gốc (Original Path)"
                   << std::left << std::setw(14) << "Loại (Type)"
-                  << std::right << std::setw(12) << "Kích thước (Size)"
+                  << std::right << std::setw(14) << "Kích thước (Size)"
                   << "\033[0m\n";
         std::cout << "  \033[90m────────────────────────────────────────────────────────────────────────────────────────────────────\033[0m\n";
         for (const auto& e : entries) {
@@ -103,12 +103,18 @@ int main(int argc, char* argv[]) {
             else if (e.size >= 1024) size_str = std::to_string(e.size / 1024) + " KB";
             else size_str = std::to_string(e.size) + " B";
 
+            // Cắt bớt đường dẫn nếu quá dài để không bị tràn cột
+            std::string path_display = e.original_path;
+            if (path_display.length() > 53) {
+                path_display = "..." + path_display.substr(path_display.length() - 50);
+            }
+
             std::cout << "  "
                       << std::left << std::setw(26) << id
                       << std::left << std::setw(22) << e.deleted_at
-                      << std::left << std::setw(40) << e.original_path
+                      << std::left << std::setw(55) << path_display
                       << std::left << std::setw(14) << e.type
-                      << std::right << std::setw(12) << size_str
+                      << std::right << std::setw(14) << size_str
                       << "\n";
         }
         std::cout << "\n";

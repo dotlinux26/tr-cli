@@ -226,7 +226,7 @@ bool restore_file(const std::string& trash_id, bool force) {
 
     if (!init_database()) return false;
 
-    const char* sql = "SELECT original_path FROM trash_entries WHERE trash_path LIKE ?";
+    const char* sql = "SELECT original_path, file_type FROM trash_entries WHERE trash_path LIKE ?";
     sqlite3_stmt* stmt;
     
     int rc = sqlite3_prepare_v2(g_db, sql, -1, &stmt, nullptr);
@@ -236,8 +236,10 @@ bool restore_file(const std::string& trash_id, bool force) {
     sqlite3_bind_text(stmt, 1, pattern.c_str(), -1, SQLITE_STATIC);
     
     std::string original;
+    std::string file_type;
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         original = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        file_type = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
     }
     sqlite3_finalize(stmt);
 
@@ -259,8 +261,27 @@ bool restore_file(const std::string& trash_id, bool force) {
 
     fs::create_directories(fs::path(original).parent_path());
     
-    for (auto& entry : fs::directory_iterator(data_dir)) {
-        fs::rename(entry.path(), original);
+    if (file_type == "directory") {
+        // For directory: data_dir contains the directory itself (e.g., data/mydir/)
+        // Find the single subdirectory in data_dir and rename it to original
+        for (auto& entry : fs::directory_iterator(data_dir)) {
+            if (fs::is_directory(entry)) {
+                if (fs::exists(original)) {
+                    if (force) fs::remove_all(original);
+                    else {
+                        std::cerr << "Error: Directory already exists\n";
+                        return false;
+                    }
+                }
+                fs::rename(entry.path(), original);
+                break;
+            }
+        }
+    } else {
+        // For file: data_dir contains the file directly
+        for (auto& entry : fs::directory_iterator(data_dir)) {
+            fs::rename(entry.path(), original);
+        }
     }
 
     delete_trash_entry(trash_id);
