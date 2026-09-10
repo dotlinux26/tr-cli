@@ -1,16 +1,11 @@
 # 02. Hệ thống SQL (SQLite3)
 
 ## 2.1. Giới thiệu
-
-Hệ thống sử dụng **SQLite3** (embedded database) để lưu trữ metadata về các file đã xóa. SQLite3 được chọn vì:
-- Tính nhẹ, không cần cấu hình server
-- Hỗ trợ trực tiếp qua API C++
-- Tích hợp sẵn trong hầu hết hệ thống Linux
-- ACID transactions đảm bảo tính toàn vẹn dữ liệu
+Hệ thống sử dụng **SQLite3** (embedded database) để lưu trữ metadata về các file đã xóa. SQLite3 được chọn vì tính nhẹ, không cần cấu hình server, hỗ trợ trực tiếp qua API C++, ACID transactions đảm bảo tính toàn vẹn dữ liệu.
 
 ## 2.2. Cấu trúc bảng
 
-### Bảng: `trash_entries`
+### Bảng: trash_entries
 
 ```sql
 CREATE TABLE trash_entries (
@@ -29,14 +24,14 @@ Mô tả các cột:
 | Cột | Kiểu dữ liệu | Mô tả |
 |-----|-------------|-------|
 | id | INTEGER | Mã định danh, tự tăng |
-| name | TEXT | Tên file gốc |
-| original_path | TEXT | Đường dẫn đầy đủ của file gốc |
-| trash_path | TEXT | Đường dẫn thư mục trash (session) |
+| name | TEXT | Tên file/thư mục gốc |
+| original_path | TEXT | Đường dẫn đầy đủ của file/thư mục gốc |
+| trash_path | TEXT | Đường dẫn thư mục session trong trash |
 | deleted_at | TIMESTAMP | Thời điểm xóa |
-| size | INTEGER | Kích thước file (byte) |
-| file_type | TEXT | Loại file (file/directory) |
+| size | INTEGER | Kích thước (bytes) |
+| file_type | TEXT | Loại: 'file' hoặc 'directory' |
 
-### Bảng: `trash_sessions`
+### Bảng: trash_sessions
 
 ```sql
 CREATE TABLE trash_sessions (
@@ -47,8 +42,11 @@ CREATE TABLE trash_sessions (
 ```
 
 Mô tả:
-- `session_dir`: Tên thư mục session (format: `YYYYMMDD-HHMMSS-5hex`)
-- Mỗi lần xóa tạo một session, chứa nhiều file/thư mục
+| Cột | Kiểu dữ liệu | Mô tả |
+|-----|-------------|-------|
+| id | INTEGER | Mã định danh, tự tăng |
+| session_dir | TEXT | Tên thư mục session (format: YYYYMMDD-HHMMSS-5hex) |
+| created_at | TIMESTAMP | Thời điểm tạo session |
 
 ## 2.3. Cấu trúc index
 
@@ -60,73 +58,56 @@ CREATE INDEX idx_session_dir ON trash_sessions(session_dir);
 
 ## 2.4. Các truy vấn thường dùng
 
-### Thêm file mới vào trash
-
+### 2.4.1. Thêm file mới vào trash
 ```sql
 INSERT INTO trash_entries (name, original_path, trash_path, deleted_at, size, file_type)
 VALUES (?, ?, ?, ?, ?, ?);
 ```
 
-### Liệt kê tất cả file trong trash
-
+### 2.4.2. Liệt kê tất cả file trong trash
 ```sql
 SELECT id, name, original_path, trash_path, deleted_at, size, file_type
 FROM trash_entries
 ORDER BY deleted_at DESC;
 ```
 
-### Tìm kiếm file theo tên
-
+### 2.4.3. Tìm kiếm file theo tên
 ```sql
 SELECT * FROM trash_entries
 WHERE name LIKE ?
 ORDER BY deleted_at DESC;
 ```
 
-### Lấy thông tin file theo ID
-
+### 2.4.4. Lấy thông tin file theo session ID
 ```sql
-SELECT * FROM trash_entries
-WHERE id = ?;
-```
-
-### Khôi phục file (lấy original_path)
-
-```sql
-SELECT original_path FROM trash_entries
+SELECT original_path, file_type FROM trash_entries
 WHERE trash_path LIKE ?;
 ```
 
-Sau khi khôi phục:
+### 2.4.5. Khôi phục file (xóa record sau khi restore)
 ```sql
 DELETE FROM trash_entries WHERE trash_path LIKE ?;
 ```
 
-### Xóa vĩnh viễn tất cả
-
+### 2.4.6. Xóa vĩnh viễn tất cả
 ```sql
 DELETE FROM trash_entries;
 ```
 
-### Đếm số file trong trash
-
+### 2.4.7. Đếm số file trong trash
 ```sql
 SELECT COUNT(*) FROM trash_entries;
 ```
 
-### Tính tổng dung lượng
-
+### 2.4.8. Tính tổng dung lượng
 ```sql
 SELECT SUM(size) FROM trash_entries;
 ```
 
 ## 2.5. Code example (C++ SQLite3 API)
 
-### Khởi tạo database
-
+### 2.5.1. Khởi tạo database
 ```cpp
-#include <sqlite3.h>
-
 bool init_database(sqlite3*& db) {
     std::string trash_base = get_trash_dir(); // ~/.local/share/trash
     std::string db_path = trash_base + "/trash.db";
@@ -166,8 +147,7 @@ bool init_database(sqlite3*& db) {
 }
 ```
 
-### Thêm file (prepared statement)
-
+### 2.5.2. Thêm file (prepared statement)
 ```cpp
 bool add_entry(sqlite3* db, const std::string& name,
                const std::string& orig, const std::string& trash,
@@ -191,8 +171,7 @@ bool add_entry(sqlite3* db, const std::string& name,
 }
 ```
 
-### Truy vấn danh sách
-
+### 2.5.3. Truy vấn danh sách
 ```cpp
 void list_entries(sqlite3* db) {
     sqlite3_stmt* stmt;
@@ -214,3 +193,32 @@ void list_entries(sqlite3* db) {
     sqlite3_finalize(stmt);
 }
 ```
+
+### 2.5.4. Khôi phục file - query file_type
+```cpp
+bool restore_file(const std::string& trash_id, bool force) {
+    // Query thêm file_type để phân biệt file vs directory
+    const char* sql = "SELECT original_path, file_type FROM trash_entries WHERE trash_path LIKE ?";
+    sqlite3_stmt* stmt;
+    sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
+    std::string pattern = "%" + trash_id + "%";
+    sqlite3_bind_text(stmt, 1, pattern.c_str(), -1, SQLITE_STATIC);
+    
+    std::string original, file_type;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        original = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        file_type = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+    }
+    sqlite3_finalize(stmt);
+    
+    if (file_type == "directory") {
+        // Restore thư mục: rename subdirectory trong data/ về original_path
+    } else {
+        // Restore file: rename file trong data/ về original_path
+    }
+    // DELETE FROM trash_entries WHERE trash_path LIKE ?
+}
+```
+
+## Kết luận chương 2
+Chương 2 đã trình bày chi tiết cấu trúc database SQLite3 cho Trash CLI: 2 bảng chính (trash_entries, trash_sessions), các index, toàn bộ truy vấn CRUD cần thiết, và code example C++ sử dụng prepared statements. Việc chuyển từ JSON sang SQLite3 đã khắc phục hoàn toàn Bug #6 (parse offset error) và tăng hiệu năng truy vấn.

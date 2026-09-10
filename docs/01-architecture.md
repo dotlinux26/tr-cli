@@ -1,137 +1,68 @@
-# 01. Kiến trúc hệ thống
+# 01. Tổng quan về dự án
 
-## 1.1. Tổng quan
+## 1.1. Hiến chương dự án
 
-tr-cli là công cụ dòng lệnh cho phép người dùng xóa, khôi phục và quản lý file trên hệ thống Linux. Hệ thống được thiết kế đơn giản, dễ mở rộng và phù hợp với môi trường dòng lệnh.
+### 1.1.1. Xác định dự án
 
-## 1.2. Cấu trúc thư mục
+| Thông tin | Nội dung |
+|-----------|----------|
+| Tên dự án | Trash CLI (tr) |
+| Mô tả | Công cụ dòng lệnh thay thế `rm`, chuyển file vào thùng rác thay vì xóa vĩnh viễn. Hỗ trợ khôi phục, liệt kê, xem thông tin và xóa vĩnh viễn khi cần. |
+| Nhà tài trợ | Trường Đại học Công nghiệp Hà Nội (HaUI) |
+| Quản lý dự án | Nguyễn Đức Cảnh |
+| Nguồn lực đội dự án | 3 thành viên: Nguyễn Đức Cảnh (PO/SM/Developer), Lò Thanh Tùng (Technical Writer), Nguyễn Khắc Nam Khánh (Technical Writer) |
 
-```
-tr-cli/
-├── CMakeLists.txt          # Hệ thống build + cài đặt
-├── README.md               # Hướng dẫn sử dụng
-├── SPEC.MD                 # Giải thích chức năng
-├── LICENSE                 # Giấy phép MIT
-├── include/
-│   └── trashcli.h          # Header chính
-├── src/
-│   ├── main.cpp            # Điểm vào chương trình + CLI parser
-│   └── trash.cpp           # Xử lý nghiệp vụ + SQLite3
-├── test/
-│   └── test_trash.cpp      # Đơn vị kiểm thử
-├── docs/
-│   ├── 01-architecture.md  # Tài liệu này
-│   ├── 02-database.md      # Hệ thống SQL
-│   ├── 03-modules.md       # Các module
-│   ├── 04-opensource.md    # Công nghệ nguồn mở
-│   ├── backlog.md          # Product backlog
-│   ├── sprint-log.md       # Nhật ký sprint
-│   └── process.md          # Quy trình phát triển
-├── thirdparty/
-│   └── sqlite/
-│       ├── sqlite3.h       # Header SQLite3
-│       ├── sqlite3ext.h    # Header SQLite3 extension
-│       ├── sqlite3.c       # Amalgamation source
-│       └── sqlite.zip      # Nén SQLite3
-├── scripts/
-│   └── bugs/               # Script mô phỏng lỗi
-│       ├── B01_metadata.sh
-│       ├── B02_crash.sh
-│       ├── B03_permission.sh
-│       ├── B04_duplicate.sh
-│       └── B05_relative_path.sh
-└── build/                  # Thư mục build (bỏ qua git)
-```
+### 1.1.2. Phạm vi, mục đích và mục tiêu của dự án
 
-## 1.3. Luồng xử lý
+#### 1.1.2.1. Phạm vi
+**Thuộc dự án:**
+- Lệnh `tr <file>`: Xóa file vào thùng rác
+- Lệnh `tr -r <dir>`: Xóa đệ quy thư mục
+- Lệnh `tr -rf <file>`: Xóa vĩnh viễn
+- Lệnh `tr -rf *` / `tr -rf <dir>/*`: Xóa nội dung, giữ thư mục
+- Lệnh `tr -re <ID>`: Khôi phục theo ID
+- Lệnh `tr -ref <ID>`: Khôi phục ghi đè
+- Lệnh `tr -l`: Liệt kê file trong thùng rác (bảng căn chỉnh cột)
+- Lệnh `tr -i <ID>` / `tr -info <ID>`: Xem thông tin
+- Lệnh `tr -e`: Xóa toàn bộ thùng rác
+- Metadata lưu trữ bằng SQLite3 embedded database
 
-Luồng xử lý chính của hệ thống:
+**Không thuộc dự án:**
+- Giao diện đồ họa (GUI)
+- Đồng bộ thùng rác qua mạng
+- Tích hợp desktop environment (KDE/GNOME trash spec)
 
-```
-Người dùng
-    │
-    ▼
-┌─────────────┐
-│  CLI Parser │  Phân tích tham số dòng lệnh
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│  Command    │  Chọn chức năng phù hợp
-│  Dispatcher │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────────────────────────┐
-│              Business Logic             │
-├─────┬─────┬─────┬─────┬─────┬──────────┤
-│trash│list │info │restore│empty│permanent│
-│     │     │     │      │     │_delete   │
-└──┬──┴──┬──┴──┬──┴──┬───┴──┬──┴─────────┘
-   │     │     │     │      │
-   ▼     ▼     ▼     ▼      ▼
-┌─────────────────────────────────────────┐
-│           Data Access Layer             │
-│     SQLite3 (embedded database)         │
-│     trash_entries, trash_sessions       │
-└─────────────────────────────────────────┘
-   │
-   ▼
-┌─────────────────────────────────────────┐
-│           File System Layer             │
-│     std::filesystem (POSIX API)         │
-└─────────────────────────────────────────┘
-```
+#### 1.1.2.2. Mục đích
+Phát triển công cụ dòng lệnh an toàn thay thế `rm`, giúp người dùng Linux xóa file mà không lo mất dữ liệu vĩnh viễn.
 
-## 1.4. Cấu trúc thư mục trash
+#### 1.1.2.3. Mục tiêu
+| Mục tiêu | Mô tả chi tiết |
+|----------|----------------|
+| MT1 | Xây dựng core engine xóa/khôi phục file an toàn (trash/restore) |
+| MT2 | Triển khai SQLite3 cho metadata, khắc phục bug parse JSON |
+| MT3 | Hiển thị bảng `tr -l` căn chỉnh cột chính xác (printf) |
+| MT4 | Hỗ trợ khôi phục thư mục không crash (query file_type) |
+| MT5 | Hoàn thành 10 User Story, tổng 30 story points |
+| MT6 | Đóng gói release v1.0.0 (.deb, .tar.gz, .zip) + GitHub Release |
 
-```
-~/.local/share/trash/
-├── trash.db                 # SQLite3 database
-├── 20260910-205150-2b42b/
-│   └── data/
-│       └── testfile.txt    # File đã xóa
-├── 20260910-205230-abc12/
-│   └── data/
-│       └── mydir/          # Thư mục đã xóa
-│           ├── a.txt
-│           └── b.txt
-```
+## 1.2. Môi trường và công cụ hỗ trợ phát triển
 
-Định dạng tên thư mục session: `YYYYMMDD-HHmmss-5hex`
+### 1.2.1. Môi trường phát triển
+- **IDE:** VS Code / Vim
+- **Quản lý mã nguồn:** Git + GitHub
+- **Build system:** CMake 3.14+
+- **Compiler:** GCC 9+ / Clang 10+ (C++17)
+- **OS mục tiêu:** Linux (POSIX)
 
-Cơ sở dữ liệu `trash.db` chứa 2 bảng:
-- `trash_entries`: Metadata từng file/thư mục
-- `trash_sessions`: Thông tin phiên xóa
+### 1.2.2. Công cụ phát triển
+| Danh mục | Công cụ | Mô tả |
+|----------|---------|-------|
+| Ngôn ngữ | C++17 | Core logic |
+| Build | CMake | Cross-platform build |
+| Database | SQLite3 3.45+ | Embedded metadata storage |
+| Filesystem | std::filesystem (C++17) | Thao tác file/thư mục |
+| Test | CTest + custom | Unit test |
+| Package | dpkg-deb, tar, zip | Release packaging |
 
-## 1.5. Công nghệ sử dụng
-
-| Công nghệ | Phiên bản | Mục đích |
-|-----------|-----------|----------|
-| C++ | 17 | Ngôn ngữ lập trình |
-| CMake | 3.14+ | Hệ thống build |
-| POSIX API | - | Thao tác file |
-| SQLite3 | 3.45+ | Lưu trữ metadata (embedded) |
-| std::filesystem | C++17 | Thao tác thư mục/file |
-
-## 1.6. Thiết kế dữ liệu
-
-### Bảng trash_entries
-| Cột | Kiểu | Mô tả |
-|-----|------|-------|
-| id | INTEGER | Khóa chính, tự tăng |
-| name | TEXT | Tên file/thư mục |
-| original_path | TEXT | Đường dẫn gốc |
-| trash_path | TEXT | Đường dẫn session |
-| deleted_at | TIMESTAMP | Thời điểm xóa |
-| size | INTEGER | Kích thước (bytes) |
-| file_type | TEXT | 'file' hoặc 'directory' |
-
-### Bảng trash_sessions
-| Cột | Kiểu | Mô tả |
-|-----|------|-------|
-| id | INTEGER | Khóa chính, tự tăng |
-| session_dir | TEXT | Tên thư mục session |
-| created_at | TIMESTAMP | Thời điểm tạo |
-
-Indexes: `idx_original_path`, `idx_deleted_at`, `idx_session_dir`
+## Kết luận chương 1
+Chương 1 đã trình bày hiến chương dự án Trash CLI: xác định dự án, phạm vi, mục tiêu, môi trường và công cụ phát triển. Các yêu cầu chức năng được định nghĩa rõ ràng qua 10 User Story. Chương 2 sẽ trình bày chi tiết quy trình lập kế hoạch và thực hiện dự án theo phương pháp Scrum.
