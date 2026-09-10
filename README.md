@@ -258,29 +258,22 @@ tr -rf file.txt → xóa thẳng khỏi hệ thống (không qua trash, không t
 
 ```
 ~/.local/share/trash/
+├── trash.db                 # SQLite3 database
 ├── 20260910-205150-2b42b/
-│   ├── data/
-│   │   └── file.txt
-│   └── metadata.json
+│   └── data/
+│       └── file.txt
 ├── 20260910-205230-abc12/
-│   ├── data/
-│   │   └── project/
-│   │       ├── a.txt
-│   │       └── b.txt
-│   └── metadata.json
+│   └── data/
+│       └── project/
+│           ├── a.txt
+│           └── b.txt
 ```
 
 **Định dạng thư mục:** `{YYYYMMDD}-{HHmmss}-{5-char-hex}`
 
-**Metadata example:**
-```json
-{
-  "name": "file.txt",
-  "original_path": "/home/user/project/file.txt",
-  "deleted_at": "2026-09-10 20:51:50",
-  "size": 4096
-}
-```
+**Database `trash.db` chứa 2 bảng:**
+- `trash_entries`: Metadata từng file/thư mục (name, original_path, trash_path, deleted_at, size, file_type)
+- `trash_sessions`: Thông tin phiên xóa (session_dir, created_at)
 
 ---
 
@@ -291,7 +284,6 @@ tr -rf file.txt → xóa thẳng khỏi hệ thống (không qua trash, không t
 | Ngôn ngữ | C++17 |
 | Build system | CMake ≥ 3.14 |
 | Database | SQLite3 (embedded) |
-| JSON | nlohmann/json |
 | Nền tảng | Linux (POSIX) |
 | Giấy phép | MIT |
 
@@ -333,8 +325,11 @@ tr-cli/
 │   ├── trashcli-v1.0.0-linux-x86_64.tar.gz
 │   └── trashcli-v1.0.0-linux-x86_64.zip
 └── thirdparty/
-    ├── json/               # nlohmann/json header
-    └── sqlite/             # SQLite3 header
+    └── sqlite/             # SQLite3 header + amalgamation
+        ├── sqlite3.h
+        ├── sqlite3ext.h
+        ├── sqlite3.c
+        └── sqlite.zip
 ```
 
 ---
@@ -379,12 +374,14 @@ mkdir -p /tmp/keepdir && touch /tmp/keepdir/a.txt
 cd /tmp/keepdir && tr -rf * && ls /tmp/keepdir
 
 # Test 5: Restore
-tr -re ~/.local/share/trash/*/data/testfile.txt
+ID=$(tr -l | head -2 | awk '{print $1}')
+tr -re $ID
 ls /tmp/testfile.txt
 
 # Test 6: Restore conflict
 touch /tmp/conflict.txt && tr /tmp/conflict.txt && touch /tmp/conflict.txt
-tr -re ~/.local/share/trash/*/data/conflict.txt
+ID=$(tr -l | head -2 | awk '{print $1}')
+tr -re $ID
 
 # Test 7: Empty trash
 echo "y" | tr -e
